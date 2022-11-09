@@ -1,6 +1,9 @@
 const User = require("../models/userModel");
 const bcrypt = require("bcrypt");
+const { cloudinary } = require("../utils/cloudinary");
+// const cloudinary = require("../utils/cloudinary");
 
+require("dotenv").config();
 module.exports.login = async (req, res, next) => {
   try {
     const { email, password } = req.body;
@@ -47,7 +50,7 @@ module.exports.getAllUsers = async (req, res, next) => {
     const users = await User.find({ _id: { $ne: req.params.id } }).select([
       "email",
       "fullName",
-      "avatarImage",
+      "userImage",
       "_id",
     ]);
     return res.json(users);
@@ -59,18 +62,26 @@ module.exports.getAllUsers = async (req, res, next) => {
 module.exports.setAvatar = async (req, res, next) => {
   try {
     const userId = req.params.id;
-    const avatarImage = req.body.image;
+    const fileStr = req.body.image;
+
+    const res = await cloudinary.uploader.upload(fileStr, {
+      upload_preset: "chat-app",
+    });
+
     const userData = await User.findByIdAndUpdate(
       userId,
       {
-        isAvatarImageSet: true,
-        avatarImage,
+        hasProfilePicture: true,
+        userImage: {
+          public_id: res.public_id,
+          url: res.secure_url,
+        },
       },
       { new: true }
     );
     return res.json({
-      isSet: userData.isAvatarImageSet,
-      image: userData.avatarImage,
+      success: true,
+      image: userData.userImage,
     });
   } catch (ex) {
     next(ex);

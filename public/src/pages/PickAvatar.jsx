@@ -1,17 +1,21 @@
 import React, { useEffect, useState } from "react";
-import axios from "axios";
-import { Buffer } from "buffer";
+
 import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import { useNavigate } from "react-router-dom";
-import { setAvatarRoute } from "../utils/routes";
+import { axiosLocal, host, setAvatarRoute } from "../utils/routes";
+import axios from "axios";
 
 export default function PickAvatar() {
-  const api = `https://api.multiavatar.com/4645646`;
   const navigate = useNavigate();
-  const [avatars, setAvatars] = useState([]);
+  const [user, setUser] = useState(null);
+
+  const [fileInputState, setFileInputState] = useState("");
+  const [previewSource, setPreviewSource] = useState("");
+  const [selectedFile, setSelectedFile] = useState();
+
   const [isLoading, setIsLoading] = useState(false);
-  const [selectedAvatar, setSelectedAvatar] = useState(undefined);
+
   const toastOptions = {
     position: "bottom-right",
     autoClose: 8000,
@@ -21,50 +25,73 @@ export default function PickAvatar() {
   };
 
   useEffect(() => {
-    if (!localStorage.getItem(import.meta.env.VITE_LOCALHOST_KEY))
+    if (localStorage.getItem(import.meta.env.VITE_LOCALHOST_KEY)) {
+      setUser(
+        JSON.parse(localStorage.getItem(import.meta.env.VITE_LOCALHOST_KEY))
+      );
+    } else {
       navigate("/login");
+    }
   }, []);
 
-  const setProfilePicture = async () => {
-    if (selectedAvatar === undefined) {
-      toast.error("Please select an avatar", toastOptions);
-    } else {
-      const user = await JSON.parse(
-        localStorage.getItem(import.meta.env.VITE_LOCALHOST_KEY)
-      );
+  const handleFileInputChange = (e) => {
+    const file = e.target.files[0];
+    previewFile(file);
+    setSelectedFile(file);
+    setFileInputState(e.target.value);
+  };
 
-      const { data } = await axios.post(`${setAvatarRoute}/${user._id}`, {
-        image: avatars[selectedAvatar],
-      });
+  const previewFile = (file) => {
+    const reader = new FileReader();
+    reader.readAsDataURL(file);
+    reader.onloadend = () => {
+      setPreviewSource(reader.result);
+    };
+  };
 
-      if (data.isSet) {
-        user.isAvatarImageSet = true;
-        user.avatarImage = data.image;
-        localStorage.setItem(
-          import.meta.env.VITE_LOCALHOST_KEY,
-          JSON.stringify(user)
-        );
-        navigate("/");
-      } else {
-        toast.error("Error setting avatar. Please try again.", toastOptions);
-      }
+  const handleSubmitFile = (e) => {
+    e.preventDefault();
+    if (!selectedFile) {
+      toast.error("No photo selected", toastOptions);
+      return;
+    }
+    const reader = new FileReader();
+    reader.readAsDataURL(selectedFile);
+    reader.onloadend = () => {
+      uploadImage(reader.result);
+    };
+    reader.onerror = () => {
+      console.error("something went wrong!!");
+    };
+    uploadImage();
+  };
+  console.log(user);
+  const uploadImage = async (base64EncodedImage) => {
+    try {
+      await fetch(`${host}/api/auth/setavatar/${user._id}`, {
+        method: "POST",
+        body: JSON.stringify({ image: base64EncodedImage }),
+        headers: { "Content-Type": "application/json" },
+      })
+        .then((res) => res.json())
+        .then((data) => {
+          if (data.userImage.public_id) {
+            user.userImage = data.image;
+            localStorage.setItem(
+              import.meta.env.VITE_LOCALHOST_KEY,
+              JSON.stringify(user)
+            );
+            navigate("/");
+          } else {
+            toast.error("Something went wrong.Try again", toastOptions);
+          }
+        });
+    } catch (err) {
+      console.error(err);
+      toast.error("Couldn't upload image", toastOptions);
     }
   };
-  useEffect(() => {
-    const func = async () => {
-      const data = [];
-      for (let i = 0; i < 4; i++) {
-        const image = await axios.get(
-          `${api}/${Math.round(Math.random() * 1000)}`
-        );
-        const buffer = new Buffer(image.data);
-        data.push(buffer.toString("base64"));
-      }
-      setAvatars(data);
-      setIsLoading(false);
-    };
-    func();
-  }, []);
+
   return (
     <>
       {isLoading ? (
@@ -74,42 +101,42 @@ export default function PickAvatar() {
         </div>
       ) : (
         <div className={styles.container}>
-          <img src="/logo.png" alt="userAvatar" className={styles.userAvatar} />
-          <button className={styles.chooseButton}>Choose Picture</button>
-          <div className="">
-            <h1>Pick an Avatar as your profile picture</h1>
-          </div>
-          <div className="flex items-center justify-center gap-3">
-            <input
-              type="text"
-              placeholder="enter username"
-              className="border-b-2 border-primary p-1 outline-none focus:outline-none"
+          <h1 className="text-2xl font-medium">Set User name and Photo</h1>
+
+          {previewSource ? (
+            <img
+              src={previewSource}
+              alt="userAvatar"
+              className={styles.userAvatar}
             />
-            <button className="bg-gray-600 text-lime-400 py-1 px-6">
-              Next
-            </button>
-          </div>
-          {/* <div className="flex gap-8">
-            {avatars.map((avatar, index) => {
-              return (
-                <div
-                  className={`${styles.avatar} ${
-                    selectedAvatar === index ? "border-[#4e0eff]" : ""
-                  }`}
-                >
-                  <img
-                    src={`data:image/svg+xml;base64,${avatar}`}
-                    alt="avatar"
-                    key={avatar}
-                    onClick={() => setSelectedAvatar(index)}
-                  />
-                </div>
-              );
-            })}
-          </div> */}
-          {/* <button onClick={setProfilePicture} className={styles.button}>
-            Set as Profile Picture
-          </button> */}
+          ) : (
+            <img
+              src={user?.userImage?.url}
+              alt="userAvatar"
+              className={styles.userAvatar}
+            />
+          )}
+
+          <input
+            id="fileInput"
+            type="file"
+            name="image"
+            onChange={handleFileInputChange}
+            value={fileInputState}
+            className="border-b-2 border-gray-600 pb-3 w-[280px]"
+          />
+
+          <button onClick={handleSubmitFile} className={styles.nextButton}>
+            Next
+          </button>
+          <button
+            onClick={() => {
+              navigate("/");
+            }}
+            className={styles.skipButton}
+          >
+            Skip
+          </button>
           <ToastContainer />
         </div>
       )}
@@ -118,8 +145,8 @@ export default function PickAvatar() {
 }
 let styles = {};
 
-styles.container = `flex flex-col justify-center items-center  gap-12 h-screen w-screen`;
+styles.container = `flex flex-col justify-center items-center  gap-4 h-screen w-screen`;
 styles.avatar = `p-1 b-2 border-tranparent rounded-full flex items-center justify-center transition-all duration-500 ease-in-out `;
-styles.button = `bg-primary text-white font-bold cursor pointer py-3 px-7 rounded-full uppercase hover:bg-[#4e0eff] transition-all duration-200 ease-out `;
-styles.userAvatar = `h-30 p-4 border-2 object-contain border-primary rounded-full`;
-styles.chooseButton = `border-2 border-primary p-2`;
+styles.userAvatar = `h-28 w-28 p-1 border-2 border-primary rounded-full my-8`;
+styles.nextButton = `text-lime-400 hover:text-gray-700 hover:bg-lime-500 w-[280px] bg-gray-600  py-1 font-bold cursor pointer hover:scale-95 duration-200 ease-out border-2 border-gray-600 `;
+styles.skipButton = `w-[200px]  py-1 font-bold cursor pointer focus:scale-95  duration-200 ease-out underline`;

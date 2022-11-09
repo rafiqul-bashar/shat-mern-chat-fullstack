@@ -7,6 +7,12 @@ const userSchema = new mongoose.Schema({
     min: 3,
     max: 25,
   },
+  userName: {
+    type: String,
+    // required: true,
+    min: 3,
+    max: 25,
+  },
   email: {
     type: String,
     required: true,
@@ -18,13 +24,22 @@ const userSchema = new mongoose.Schema({
     required: true,
     min: 8,
   },
-  isAvatarImageSet: {
+  hasProfilePicture: {
     type: Boolean,
     default: false,
   },
-  avatarImage: {
-    type: String,
-    default: "",
+  userImage: {
+    public_id: {
+      type: String,
+      // required: true,
+      default: "",
+    },
+    url: {
+      type: String,
+      required: true,
+      default:
+        "https://aui.atlassian.com/aui/8.8/docs/images/avatar-person.svg",
+    },
   },
 });
 

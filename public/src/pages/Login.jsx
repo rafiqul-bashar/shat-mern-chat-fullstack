@@ -3,7 +3,7 @@ import axios from "axios";
 import { useNavigate, Link } from "react-router-dom";
 import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
-import { loginRoute } from "../utils/routes";
+import { axiosLocal, loginRoute } from "../utils/routes";
 
 export default function Login() {
   const navigate = useNavigate();
@@ -41,7 +41,7 @@ export default function Login() {
   const handleSubmit = async (event) => {
     event.preventDefault();
     if (validateForm()) {
-      const { data } = await axios.post(loginRoute, {
+      const { data } = await axiosLocal.post(loginRoute, {
         email,
         password,
       });

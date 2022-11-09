@@ -1,9 +1,10 @@
 import React from "react";
 import { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { Contacts } from "../components";
+import { ChatContainer, Contacts } from "../components";
 import { io } from "socket.io-client";
-import { allUsersRoute, host } from "../utils/routes";
+import { allUsersRoute, axiosLocal, host } from "../utils/routes";
+import axios from "axios";
 export default function Home() {
   const navigate = useNavigate();
   const socket = useRef();
@@ -36,11 +37,13 @@ export default function Home() {
   useEffect(() => {
     const func = async () => {
       if (currentUser) {
-        if (currentUser.isAvatarImageSet) {
-          const data = await axios.get(`${allUsersRoute}/${currentUser._id}`);
+        if (currentUser.userImage.public_id) {
+          const data = await axiosLocal.get(
+            `${allUsersRoute}/${currentUser._id}`
+          );
           setContacts(data.data);
         } else {
-          // navigate("/setAvatar");
+          navigate("/setAvatar");
         }
       }
     };
@@ -54,29 +57,33 @@ export default function Home() {
       setFullName(
         await JSON.parse(
           localStorage.getItem(import.meta.env.VITE_LOCALHOST_KEY)
-        ).username
+        ).fullName
       );
     };
     func();
   }, []);
   return (
     <div className={styles.container}>
-      <div className="h-[85vh] w-[85vw] grid grid-cols-3">
-        <div className="col-span-1">
-          <Contacts />
+      <div className="grid grid-cols-3">
+        <div className=" md:w-xl">
+          <Contacts changeChat={handleChatChange} />
         </div>
-        <div className={styles.startChatContainer}>
-          <img className="h-80" src="/logo.png" alt="as" />
-          <h1>
-            Welcome, <span className="primary">{fullName}!</span>
-          </h1>
-          <h3>Please select a chat to Start messaging.</h3>
-        </div>
+        {currentChat === undefined ? (
+          <div className={styles.startChatContainer}>
+            <img className="h-40 md:52" src="/logo.png" alt="as" />
+            <h1>
+              Welcome, <span className="primary">{fullName}!</span>
+            </h1>
+            <h3>Please select a chat to Start messaging.</h3>
+          </div>
+        ) : (
+          <ChatContainer currentChat={currentChat} socket={socket} />
+        )}
       </div>
     </div>
   );
 }
 let styles = {};
 
-styles.container = `h-screen w-screen flex flex-col justify-center gap-4 `;
-styles.startChatContainer = `flex flex-col items-center justify-center col-span-2`;
+styles.container = `h-screen w-screen flex flex-col justify-center `;
+styles.startChatContainer = `flex flex-col items-center justify-center col-span-2 text-center `;

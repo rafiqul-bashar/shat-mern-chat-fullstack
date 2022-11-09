@@ -3,7 +3,7 @@ import React, { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
-import { registerRoute } from "../utils/routes";
+import { axiosLocal, registerRoute } from "../utils/routes";
 export default function Register() {
   const navigate = useNavigate();
   const toastOptions = {
@@ -55,8 +55,8 @@ export default function Register() {
 
     if (handleValidation()) {
       const { email, fullName, password } = values;
-      console.log({ email, fullName, password });
-      const { data } = await axios.post(registerRoute, {
+
+      const { data } = await axiosLocal.post(registerRoute, {
         fullName,
         email,
         password,
