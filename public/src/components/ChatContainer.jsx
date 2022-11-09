@@ -43,7 +43,7 @@ export default function ChatContainer({ currentChat }) {
       100
     );
   }, [messages]);
-
+  // just edited
   return (
     <div className={styles.container}>
       <div className="h-[10%] md:h-[15%] flex items-center justify-between px-4 md:px-12">
