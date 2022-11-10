@@ -1,6 +1,7 @@
 import React, { useEffect, useRef, useState } from "react";
 import { BiPowerOff } from "react-icons/bi";
 import { useNavigate } from "react-router-dom";
+import MessageInput from "./MessageInput";
 const messages = [
   { fromSelf: true, message: "Kio Mia Ki koitasen" },
   { fromSelf: false, message: "Thik e to koitasen" },
@@ -17,7 +18,7 @@ const messages = [
   { fromSelf: true, message: "Kio Mia Ki koitasen" },
   { fromSelf: false, message: "Thik e to koitasen" },
 ];
-export default function ChatContainer({ currentChat }) {
+export default function ChatContainer({ currentChat, hand }) {
   const bottomOfChat = useRef();
   const [arrivalMessage, setArrivalMessage] = useState(null);
   const navigate = useNavigate();
@@ -46,7 +47,7 @@ export default function ChatContainer({ currentChat }) {
   // just edited
   return (
     <div className={styles.container}>
-      <div className="h-[10%] md:h-[15%] flex items-center justify-between px-4 md:px-12">
+      <div className="h-[10vh] flex items-center justify-between px-4 md:px-12">
         <div className="flex items-center gap-3">
           <div className="avatar">
             <img
@@ -70,7 +71,7 @@ export default function ChatContainer({ currentChat }) {
           </button>
         </div>
       </div>
-      <div className="px-3 overflow-y-scroll h-[80%] md:h-[70%] flex flex-col gap-3 ">
+      <div className="px-3 overflow-y-scroll h-[80vh] flex flex-col gap-3 ">
         {messages.map((message, i) => {
           return (
             <div
@@ -88,11 +89,11 @@ export default function ChatContainer({ currentChat }) {
         <div ref={bottomOfChat} />
       </div>
       {/* <ChatInput handleSendMsg={handleSendMsg} /> */}
-      <div className="h-[10%] md:h-[15%]  w-full bg-red-400 bottom-0">
-        Chat Footer
+      <div className="h-[10vh]  w-full  bottom-0">
+        <MessageInput />
       </div>
     </div>
   );
 }
 const styles = {};
-styles.container = `overflow-hidden col-span-2 `;
+styles.container = `overflow-hidden col-span-2 relative`;
